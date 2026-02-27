@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, use } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Loader2, ChevronDown, FileText, Download } from "lucide-react"
+import { ArrowLeft, Loader2, ChevronDown, FileText, Download, Users } from "lucide-react"
 import { motion } from "framer-motion"
 import ReactMarkdown from "react-markdown"
 import { useAuth } from "@/contexts/auth-context"
@@ -20,6 +20,7 @@ import { FollowUpChat } from "@/components/feedback/follow-up-chat"
 import { useFollowUpChat } from "@/hooks/use-follow-up-chat"
 import { SlideReviewSection } from "@/components/feedback/slide-review-section"
 import { DeliveryAnalyticsSection } from "@/components/feedback/delivery-analytics-section"
+import { detectPersonaMeta } from "@/lib/persona-detection"
 
 const SCORE_POLL_INTERVAL = 3000
 const SCORE_POLL_MAX_ATTEMPTS = 20
@@ -166,6 +167,7 @@ export default function FeedbackPage({ params }: { params: Promise<{ sessionId: 
   const headerTitle = v2Scores?.refinedTitle ?? (hasScores ? session.setup.topic : null)
   const headerAudience = v2Scores?.refinedAudience ?? (hasScores ? session.setup.audience : null)
   const headerGoal = v2Scores?.refinedGoal ?? (hasScores ? session.setup.goal : null)
+  const personaMeta = detectPersonaMeta(headerAudience ?? session.setup.audience)
 
   return (
     <div className="relative min-h-screen bg-background pb-24">
@@ -247,6 +249,12 @@ export default function FeedbackPage({ params }: { params: Promise<{ sessionId: 
               <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                 {date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </span>
+              {personaMeta && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                  <Users className="h-3 w-3" />
+                  {personaMeta.label}
+                </span>
+              )}
             </div>
           </motion.div>
         </header>

@@ -113,6 +113,31 @@ describe('buildScoringPrompt', () => {
     expect(rulesIndex).toBeLessThan(step1Index)
   })
 
+  it('includes persona section for VC audience', () => {
+    const prompt = buildScoringPrompt(baseInput)
+    expect(prompt).toContain('PERSONA ARTIFACTS')
+  })
+
+  it('omits persona section for non-matching audience', () => {
+    const prompt = buildScoringPrompt({
+      ...baseInput,
+      setup: { ...baseInput.setup, audience: 'school board members' },
+    })
+    expect(prompt).not.toContain('PERSONA ARTIFACTS')
+  })
+
+  it('places persona section after research and before transcript', () => {
+    const prompt = buildScoringPrompt({
+      ...baseInput,
+      researchContext: 'VCs care about TAM',
+    })
+    const researchIndex = prompt.indexOf('AUDIENCE RESEARCH BRIEFING')
+    const personaIndex = prompt.indexOf('PERSONA ARTIFACTS')
+    const transcriptIndex = prompt.indexOf('Full presentation transcript:')
+    expect(researchIndex).toBeLessThan(personaIndex)
+    expect(personaIndex).toBeLessThan(transcriptIndex)
+  })
+
   it('places identity before everything else', () => {
     const prompt = buildScoringPrompt(baseInput)
     const identityIndex = prompt.indexOf('You are Vera — an AI that becomes')

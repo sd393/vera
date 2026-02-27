@@ -1,6 +1,7 @@
 import type { z } from "zod"
 import type { feedbackScoreRequestSchema } from "@/backend/validation"
 import { BASE_IDENTITY, CORE_RULES, buildResearchSection } from "@/backend/system-prompt"
+import { detectPersona, buildPersonaSection } from "@/backend/personas"
 
 export function buildScoringPrompt(input: z.infer<typeof feedbackScoreRequestSchema>): string {
   const parts: string[] = [
@@ -15,6 +16,11 @@ export function buildScoringPrompt(input: z.infer<typeof feedbackScoreRequestSch
   const research = buildResearchSection(input.researchContext)
   if (research) {
     parts.push(research)
+  }
+
+  const personaSection = buildPersonaSection(detectPersona(input.setup.audience))
+  if (personaSection) {
+    parts.push(personaSection)
   }
 
   if (input.transcript) {

@@ -30,7 +30,10 @@
       "Bash(pnpm add:*)",
       "Bash(cd:*)",
       "Bash(cd \"C:\\\\Users\\\\ezhou\\\\Documents\\\\demian\" && npm install @react-pdf/renderer 2>&1)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git rm:*)",
+      "Bash(git rebase:*)",
+      "Bash(GIT_EDITOR=true git rebase:*)"
     ]
   }
 }

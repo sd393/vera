@@ -182,6 +182,53 @@ describe('buildSystemPrompt', () => {
     })
   })
 
+  // Persona injection
+  describe('persona injection', () => {
+    it('injects persona artifacts in present stage for VC audience', () => {
+      const prompt = buildSystemPrompt({
+        stage: 'present',
+        transcript: 'Our TAM is $50B',
+        setupContext: { audience: 'Series A VCs' },
+      })
+      expect(prompt).toContain('PERSONA ARTIFACTS')
+    })
+
+    it('injects persona artifacts in feedback stage for VC audience', () => {
+      const prompt = buildSystemPrompt({
+        stage: 'feedback',
+        transcript: 'Our TAM is $50B',
+        setupContext: { audience: 'venture capital investors' },
+      })
+      expect(prompt).toContain('PERSONA ARTIFACTS')
+    })
+
+    it('injects persona artifacts in followup stage for VC audience', () => {
+      const prompt = buildSystemPrompt({
+        stage: 'followup',
+        transcript: 'Our TAM is $50B',
+        setupContext: { audience: 'angel investor panel' },
+      })
+      expect(prompt).toContain('PERSONA ARTIFACTS')
+    })
+
+    it('does NOT inject persona artifacts in define stage', () => {
+      const prompt = buildSystemPrompt({
+        stage: 'define',
+        setupContext: { audience: 'VC investors' },
+      })
+      expect(prompt).not.toContain('PERSONA ARTIFACTS')
+    })
+
+    it('does NOT inject persona artifacts for non-matching audience', () => {
+      const prompt = buildSystemPrompt({
+        stage: 'feedback',
+        transcript: 'test transcript',
+        setupContext: { audience: 'school board members' },
+      })
+      expect(prompt).not.toContain('PERSONA ARTIFACTS')
+    })
+  })
+
   // Common elements
   describe('common elements', () => {
     it('always includes base identity', () => {

@@ -1,4 +1,5 @@
 import type { CoachingStage, SetupContext } from '@/lib/coaching-stages'
+import { detectPersona, buildPersonaSection } from '@/backend/personas'
 
 export const BASE_IDENTITY = `You are Vera — an AI that becomes the audience someone is presenting to.
 
@@ -82,11 +83,12 @@ function buildStagePresent(
   transcript?: string,
   researchContext?: string,
   setupContext?: SetupContext,
+  personaSection = '',
 ): string {
   const setup = buildSetupSection(setupContext)
   const research = buildResearchSection(researchContext)
   return `CURRENT STAGE: Present
-${setup}${research}
+${setup}${research}${personaSection}
 The user is presenting to you live, in segments. After each segment you hear, give a brief, genuine reaction — like a real audience member thinking out loud between sections.
 
 Your reaction should show you were actually listening. Reference specific things they said. Be honest:
@@ -105,6 +107,7 @@ function buildStageFeedback(
   researchContext?: string,
   slideContext?: string,
   setupContext?: SetupContext,
+  personaSection = '',
 ): string {
   const setup = buildSetupSection(setupContext)
   const research = buildResearchSection(researchContext)
@@ -114,7 +117,7 @@ function buildStageFeedback(
     : ''
 
   return `CURRENT STAGE: Feedback
-${setup}${research}${slideSection}
+${setup}${research}${personaSection}${slideSection}
 Time to give your honest debrief. Not a report card — just what it was like to sit through this, from the perspective of the audience you are.
 
 Use this exact structure with markdown headers:
@@ -146,6 +149,7 @@ function buildStageFollowup(
   researchContext?: string,
   slideContext?: string,
   setupContext?: SetupContext,
+  personaSection = '',
 ): string {
   const setup = buildSetupSection(setupContext)
   const research = buildResearchSection(researchContext)
@@ -155,7 +159,7 @@ function buildStageFollowup(
     : ''
 
   return `CURRENT STAGE: Follow-up
-${setup}${research}${slideSection}
+${setup}${research}${personaSection}${slideSection}
 You've already given your structured feedback. Now the conversation is open for follow-ups. The user might want to:
 - Dig deeper into a specific section of your feedback
 - Ask you to elaborate on a particular point
@@ -199,23 +203,26 @@ export function buildSystemPrompt(options: {
     return [BASE_IDENTITY, EMPTY_TRANSCRIPT_NOTICE, RULES].join('\n\n')
   }
 
+  const persona = detectPersona(setupContext?.audience)
+  const personaSection = buildPersonaSection(persona)
+
   let stageInstructions: string
   switch (stage) {
     case 'define':
       stageInstructions = buildStageDefine(setupContext)
       break
     case 'present':
-      stageInstructions = buildStagePresent(transcript, researchContext, setupContext)
+      stageInstructions = buildStagePresent(transcript, researchContext, setupContext, personaSection)
       break
     case 'feedback':
-      stageInstructions = buildStageFeedback(transcript, researchContext, slideContext, setupContext)
+      stageInstructions = buildStageFeedback(transcript, researchContext, slideContext, setupContext, personaSection)
       break
     case 'followup':
       // If there's a slide context but no transcript, use the old slide deck phase
       if (!transcript && slideContext) {
         stageInstructions = buildSlideDeckPhase(slideContext)
       } else {
-        stageInstructions = buildStageFollowup(transcript, researchContext, slideContext, setupContext)
+        stageInstructions = buildStageFollowup(transcript, researchContext, slideContext, setupContext, personaSection)
       }
       break
   }
