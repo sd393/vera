@@ -15,8 +15,10 @@ import { formatAnalyticsSummary } from "@/lib/format-delivery-analytics"
 import { useRecorder } from "@/hooks/use-recorder"
 import { useSlideReview } from "@/hooks/use-slide-review"
 import { useContextFile } from "@/hooks/use-context-file"
+import { useTTS } from "@/hooks/use-tts"
+import { useAudiencePulse } from "@/hooks/use-audience-pulse"
 import { formatSlideContextForChat } from "@/lib/format-utils"
-import { isValidFaceEmotion, type FaceState, type FaceEmotion } from "@/components/audience-face"
+import { type FaceState, type FaceEmotion } from "@/components/audience-face"
 import type { SetupContext } from "@/lib/coaching-stages"
 import { SetupWizard } from "@/components/setup-wizard"
 import { PresentationOverlay } from "@/components/presentation-overlay"
@@ -85,25 +87,12 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
   /* ── State ── */
   const [presentationMode, setPresentationMode] = useState(false)
   const [navigatingToFeedback, setNavigatingToFeedback] = useState(false)
+  const [satisfiedWindow, setSatisfiedWindow] = useState(false)
   const sessionSaveTriggered = useRef(false)
   const presentationCommittedRef = useRef(false)
   const pendingUploadRef = useRef(false)
   const recordingInputRef = useRef<HTMLInputElement>(null)
-
-  // Saved setup context — persists after SetupWizard unmounts
   const savedSetupRef = useRef<{ context: SetupContext | null; message: string | null }>({ context: null, message: null })
-
-  /* ── Audience pulse ── */
-  const [satisfiedWindow, setSatisfiedWindow] = useState(false)
-  const [pulseLabels, setPulseLabels] = useState<{ text: string; emotion: FaceEmotion }[]>([])
-  const [pulseIndex, setPulseIndex] = useState(0)
-  const prevStreaming = useRef(false)
-
-  /* ── TTS (ElevenLabs) ── */
-  const [isTTSLoading, setIsTTSLoading] = useState(false)
-  const [isTTSSpeaking, setIsTTSSpeaking] = useState(false)
-  const [ttsCaption, setTtsCaption] = useState("")
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null)
   const presentationModeRef = useRef(false)
   useEffect(() => { presentationModeRef.current = presentationMode }, [presentationMode])
 
@@ -111,6 +100,24 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
   const messagesRef = useRef(messages)
   messagesRef.current = messages
 
+  /* ── Audience pulse ── */
+  const { pulseLabels, pulseIndex, currentPulse, fetchPulseLabels } = useAudiencePulse({
+    messagesRef,
+    appendPulseLabels,
+  })
+
+  /* ── TTS ── */
+  const { isLoading: isTTSLoading, isSpeaking: isTTSSpeaking, caption: ttsCaption, speak: speakText, stop: stopSpeaking } = useTTS({
+    onSpeakEnd: () => {
+      if (presentationModeRef.current) {
+        fetchPulseLabels()
+        setSatisfiedWindow(true)
+        setTimeout(() => setSatisfiedWindow(false), 3000)
+      }
+    },
+  })
+
+  /* ── Debug check (dev only) ── */
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') {
       const bad = messages.find(m => m.content === undefined)
@@ -118,138 +125,9 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
     }
   }, [messages])
 
-  function fetchPulseLabels(overrideMessages?: { role: string; content: string }[]) {
-    const recent = overrideMessages ?? messagesRef.current
-      .filter(m => m.content?.trim())
-      .slice(-4)
-      .map(m => ({ role: m.role as "user" | "assistant", content: m.content }))
-    if (recent.length === 0) return
-    fetch("/api/audience-pulse", {
-      method: "POST",
-      headers: buildAuthHeaders(),
-      body: JSON.stringify({ messages: recent }),
-    })
-      .then(r => {
-        if (!r.ok) throw new Error(`Pulse API ${r.status}`)
-        return r.json()
-      })
-      .then(({ labels }) => {
-        if (!Array.isArray(labels)) return
-        const validLabels = labels
-          .map((l: unknown) => {
-            if (l && typeof l === "object" && "text" in l) {
-              const obj = l as { text: unknown; emotion?: unknown }
-              const text = typeof obj.text === "string" ? obj.text : ""
-              const emotion: FaceEmotion = isValidFaceEmotion(obj.emotion) ? obj.emotion : "neutral"
-              return text ? { text, emotion } : null
-            }
-            if (typeof l === "string") return { text: l, emotion: "neutral" as FaceEmotion }
-            return null
-          })
-          .filter((l): l is { text: string; emotion: FaceEmotion } => l !== null)
-        if (validLabels.length > 0) {
-          setPulseLabels(validLabels)
-          setPulseIndex(0)
-          appendPulseLabels(validLabels)
-        }
-      })
-      .catch((err) => { console.warn("[audience-pulse] failed:", err) })
-  }
-
-  /* ── TTS functions ── */
-
-  const ttsSentencesRef = useRef<{ text: string; start: number; end: number }[]>([])
-  const ttsAbortRef = useRef<AbortController | null>(null)
-
-  function speakText(text: string) {
-    stopSpeaking()
-    setIsTTSLoading(true)
-
-    ttsAbortRef.current?.abort()
-    const controller = new AbortController()
-    ttsAbortRef.current = controller
-
-    fetch("/api/tts", {
-      method: "POST",
-      headers: buildAuthHeaders(),
-      body: JSON.stringify({ text }),
-      signal: controller.signal,
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`TTS failed: ${res.status}`)
-        return res.json()
-      })
-      .then(({ audio, sentences }: { audio: string; sentences: { text: string; start: number; end: number }[] }) => {
-        if (controller.signal.aborted) return
-
-        ttsSentencesRef.current = sentences
-        if (sentences.length > 0) setTtsCaption(sentences[0].text)
-
-        const bytes = Uint8Array.from(atob(audio), c => c.charCodeAt(0))
-        const blob = new Blob([bytes], { type: "audio/mpeg" })
-        const url = URL.createObjectURL(blob)
-        const audioEl = new Audio(url)
-        ttsAudioRef.current = audioEl
-
-        audioEl.onplaying = () => {
-          setIsTTSLoading(false)
-          setIsTTSSpeaking(true)
-        }
-        audioEl.ontimeupdate = () => {
-          const t = audioEl.currentTime + 0.3
-          const hit = ttsSentencesRef.current.find(s => t >= s.start && t < s.end)
-          if (hit) setTtsCaption(hit.text)
-        }
-        audioEl.onended = () => {
-          URL.revokeObjectURL(url)
-          setIsTTSSpeaking(false)
-          setTtsCaption("")
-          ttsAudioRef.current = null
-          if (presentationModeRef.current) {
-            fetchPulseLabels()
-            setSatisfiedWindow(true)
-            setTimeout(() => setSatisfiedWindow(false), 3000)
-          }
-        }
-        audioEl.onerror = () => {
-          URL.revokeObjectURL(url)
-          setIsTTSLoading(false)
-          setIsTTSSpeaking(false)
-          setTtsCaption("")
-          ttsAudioRef.current = null
-        }
-
-        audioEl.play().catch(() => {
-          setIsTTSLoading(false)
-          setIsTTSSpeaking(false)
-          setTtsCaption("")
-          URL.revokeObjectURL(url)
-          ttsAudioRef.current = null
-          toast.error("Browser blocked audio playback. Tap anywhere and try again.")
-        })
-      })
-      .catch((err) => {
-        if (err instanceof Error && err.name === "AbortError") return
-        setIsTTSLoading(false)
-        setTtsCaption("")
-        toast.error("Vera's voice is unavailable right now.")
-      })
-  }
-
-  function stopSpeaking() {
-    ttsAbortRef.current?.abort()
-    ttsAbortRef.current = null
-    if (ttsAudioRef.current) {
-      ttsAudioRef.current.pause()
-      ttsAudioRef.current = null
-    }
-    setIsTTSLoading(false)
-    setIsTTSSpeaking(false)
-    setTtsCaption("")
-    ttsSentencesRef.current = []
-  }
-
   /* ── Post-streaming effects ── */
+
+  const prevStreaming = useRef(false)
 
   useEffect(() => {
     if (prevStreaming.current && !isStreaming) {
@@ -272,13 +150,6 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
     }
     prevStreaming.current = isStreaming
   }, [isStreaming, messages]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Cycle through pulse labels
-  useEffect(() => {
-    if (pulseLabels.length <= 1) return
-    const t = setInterval(() => setPulseIndex(i => (i + 1) % pulseLabels.length), 4000)
-    return () => clearInterval(t)
-  }, [pulseLabels])
 
   /* ── Held processing state ── */
 
@@ -328,7 +199,6 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
   const thinkingLabel = thinkingLabelRef.current.label || "Thinking..."
 
   // Audience pulse label + emotion for presentation overlay
-  const currentPulse = pulseLabels[pulseIndex] ?? null
   const currentEmotion: FaceEmotion = currentPulse?.emotion ?? "neutral"
   const audienceLabel = presentationMode
     ? (currentPulse?.text ?? null)
@@ -435,10 +305,6 @@ export function CoachingInterface({ authToken }: CoachingInterfaceProps) {
       setSlideContext(formatSlideContextForChat(slideReview.deckSummary, slideReview.slideFeedbacks))
     }
   }, [slideReview.deckSummary, slideReview.slideFeedbacks, setSlideContext])
-
-  useEffect(() => {
-    return () => { ttsAudioRef.current?.pause(); ttsAudioRef.current = null }
-  }, [])
 
   /* ── Handlers ── */
 
