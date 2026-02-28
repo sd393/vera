@@ -35,7 +35,15 @@ Bad examples (too positive, too dramatic, too generic, too third-person):
 {"labels": [{"text": "A room of seasoned investors leaning forward", "emotion": "impressed"}, {"text": "The tension is palpable", "emotion": "concerned"}, {"text": "Wondering if this will change everything", "emotion": "impressed"}]}`
 
 export async function handleAudiencePulse(request: NextRequest) {
-  const { messages } = await request.json()
+  let body: { messages?: unknown }
+  try {
+    body = await request.json()
+  } catch {
+    return Response.json({ labels: [] })
+  }
+
+  const messages = Array.isArray(body?.messages) ? body.messages : []
+  if (messages.length === 0) return Response.json({ labels: [] })
 
   const completion = await openai().chat.completions.create({
     model: 'gpt-4o-mini',

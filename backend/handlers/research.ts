@@ -45,7 +45,6 @@ export async function handleResearch(request: NextRequest) {
 
       try {
         // Stage 1: Generate search terms
-        console.log('[research] Stage 1: generating search terms...')
         const { searchTerms, audienceSummary } = await generateSearchTerms(
           sanitizeInput(audienceDescription),
           transcript ? sanitizeInput(transcript) : undefined,
@@ -53,14 +52,11 @@ export async function handleResearch(request: NextRequest) {
           goal ? sanitizeInput(goal) : undefined,
           additionalContext ? sanitizeInput(additionalContext) : undefined,
         )
-        console.log('[research] Stage 1 complete:', { audienceSummary, searchTerms })
 
         send('terms', { searchTerms, audienceSummary })
 
         // Stage 2: Conduct web research
-        console.log('[research] Stage 2: conducting web research...')
         const researchContext = await conductResearch(searchTerms, audienceSummary, goal)
-        console.log('[research] Stage 2 complete:', researchContext.slice(0, 200) + '...')
 
         send('complete', { researchContext, audienceSummary, searchTerms })
       } catch (error) {
