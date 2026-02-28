@@ -78,7 +78,9 @@ export const SetupWizard = React.memo(function SetupWizard({
   const topicSizerRef = useRef<HTMLSpanElement>(null)
   const audienceSizerRef = useRef<HTMLSpanElement>(null)
   const goalSizerRef = useRef<HTMLSpanElement>(null)
+  const additionalSizerRef = useRef<HTMLSpanElement>(null)
   const [blankWidths, setBlankWidths] = useState({ topic: 0, audience: 0, goal: 0 })
+  const [additionalLineWidth, setAdditionalLineWidth] = useState(0)
   const hasMeasuredRef = useRef(false)
 
   const measureWidths = useCallback(() => {
@@ -92,6 +94,11 @@ export const SetupWizard = React.memo(function SetupWizard({
   useLayoutEffect(() => {
     measureWidths()
   }, [setupTopic, setupAudience, setupGoal, sizerIndex, measureWidths])
+
+  useLayoutEffect(() => {
+    const w = additionalSizerRef.current?.offsetWidth ?? 0
+    setAdditionalLineWidth(Math.min(w, 320))
+  }, [setupAdditional, showAdditional])
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -369,6 +376,14 @@ export const SetupWizard = React.memo(function SetupWizard({
                     </button>
                   ) : (
                     <div className="relative pb-1 text-center" style={{ width: 320, maxWidth: "90vw" }}>
+                      {/* hidden sizer to measure text width */}
+                      <span
+                        ref={additionalSizerRef}
+                        className="invisible absolute whitespace-nowrap px-1 font-display text-sm"
+                        aria-hidden="true"
+                      >
+                        {setupAdditional || "Anything else Vera should know..."}
+                      </span>
                       <textarea
                         autoFocus
                         rows={1}
@@ -387,9 +402,9 @@ export const SetupWizard = React.memo(function SetupWizard({
                       />
                       <motion.span
                         className="absolute bottom-0 left-1/2 h-[2px] -translate-x-1/2 rounded-full bg-primary/30"
-                        initial={{ width: 0 }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        initial={false}
+                        animate={{ width: additionalLineWidth > 0 ? additionalLineWidth + 20 : 0 }}
+                        transition={{ duration: 0.35, ease: "easeInOut" }}
                       />
                     </div>
                   )}
