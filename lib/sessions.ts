@@ -64,6 +64,14 @@ export interface SessionScores {
   }[]
 }
 
+/* ── Delivery observation (V2 add-on) ── */
+
+export interface DeliveryObservation {
+  category: 'pace' | 'fillers' | 'volume' | 'pauses' | 'pitch' | 'phrasing'
+  observation: string   // 1-2 sentence actionable note
+  severity: 'positive' | 'neutral' | 'concern'
+}
+
 /* ── Score types (V2 — letter + dynamic rubric) ── */
 
 export interface RubricCriterion {
@@ -87,6 +95,7 @@ export interface SessionScoresV2 {
   refinedTitle?: string       // AI-polished presentation title
   refinedAudience?: string    // AI-polished audience description
   refinedGoal?: string        // AI-polished goal description
+  deliveryFeedback?: DeliveryObservation[]  // speech & delivery observations
 }
 
 /** Type guard: V2 scores have a `feedbackLetter` property. */

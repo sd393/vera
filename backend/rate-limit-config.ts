@@ -8,7 +8,7 @@ export const RATE_LIMITS = {
   /** Chat endpoint — IP-level burst protection */
   chatIp: { limit: 10, windowMs: 60_000 },
   /** Transcription — heavier compute, tighter IP limit */
-  transcribe: { limit: 5, windowMs: 60_000 },
+  transcribe: { limit: 20, windowMs: 60_000 },
   /** File upload — IP-level burst protection */
   upload: { limit: 10, windowMs: 60_000 },
   /** Slide analysis — heavier compute, tighter IP limit */

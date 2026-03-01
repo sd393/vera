@@ -36,7 +36,10 @@
       "WebFetch(domain:www.npmjs.com)",
       "Bash(cd:*)",
       "Bash(cd \"C:\\\\Users\\\\ezhou\\\\Documents\\\\demian\" && npm install @react-pdf/renderer 2>&1)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

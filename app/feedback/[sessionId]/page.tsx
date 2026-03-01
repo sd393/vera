@@ -20,6 +20,7 @@ import { FollowUpChat } from "@/components/feedback/follow-up-chat"
 import { useFollowUpChat } from "@/hooks/use-follow-up-chat"
 import { useFeedbackStream } from "@/hooks/use-feedback-stream"
 import { SlideReviewSection } from "@/components/feedback/slide-review-section"
+import { DeliveryFeedback } from "@/components/feedback/delivery-feedback"
 import { detectPersonaMeta } from "@/lib/persona-detection"
 
 export default function FeedbackPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -287,6 +288,10 @@ export default function FeedbackPage({ params }: { params: Promise<{ sessionId: 
                   />
                 </div>
               </motion.section>
+
+              {v2Scores.deliveryFeedback && v2Scores.deliveryFeedback.length > 0 && (
+                <DeliveryFeedback observations={v2Scores.deliveryFeedback} />
+              )}
             </>
           ) : isStreamingLetter || (hasStreamedScores && !scores) ? (
             /* Letter streaming in, scores not yet merged */

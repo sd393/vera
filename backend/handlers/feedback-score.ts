@@ -100,7 +100,7 @@ export async function handleFeedbackScore(request: NextRequest) {
       messages: [{ role: "system", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.3,
-      max_tokens: 5000,
+      max_tokens: 5500,
       stream: true,
     })
 

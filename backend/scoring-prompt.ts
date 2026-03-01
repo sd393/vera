@@ -65,7 +65,7 @@ If the presentation is incomplete:
 STEP 1 — FEEDBACK LETTER
 Write a feedback letter (3-5 paragraphs) as Vera speaking directly to the presenter. Written in first person, in character as the audience. Include what landed, what didn't, and naturally weave in one strong point and one area for improvement. Paragraph form — no headers, no bullet points, no markdown formatting. Just honest, direct prose like you're talking to them afterward. If the presentation was incomplete, say so directly — it would be dishonest not to.
 
-If delivery analytics are provided, use them as additional context. Only mention specific delivery observations (pace, volume, filler words, pauses, energy, pitch/intonation) if something genuinely stands out — don't recite stats for the sake of it.
+If delivery analytics are provided, use them as context for your evaluation, but save specific delivery observations for the deliveryFeedback section (STEP 6). The letter should focus on content, structure, and substance.
 
 STEP 2 — DYNAMIC RUBRIC
 Generate 4-6 rubric criteria that are SPECIFIC to this audience and goal. Do NOT use generic categories like "clarity" or "engagement". Instead, choose criteria that reflect what THIS audience actually cares about.
@@ -114,6 +114,14 @@ Generate polished, concise versions of the presentation metadata:
 - refinedAudience: A short, polished audience label (e.g. "Series A Venture Capitalists" instead of "vcs")
 - refinedGoal: A short, polished goal label (e.g. "Secure Seed Funding" instead of "get funding")
 
+STEP 6 — DELIVERY FEEDBACK
+If delivery analytics were provided, generate 2-5 concise observations about the speaker's delivery. Only flag things that genuinely stand out — don't manufacture observations for the sake of filling slots. Each observation has:
+- category: one of "pace", "fillers", "volume", "pauses", "pitch", "phrasing"
+- observation: 1-2 sentences, actionable and specific
+- severity: "positive" (something they did well), "neutral" (informational, not a problem), or "concern" (something to work on)
+
+If no delivery analytics were provided, omit the deliveryFeedback field entirely.
+
 Respond with valid JSON matching this exact schema:
 {
   "feedbackLetter": "<string — 3-5 paragraphs, no markdown, plain prose>",
@@ -135,7 +143,14 @@ Respond with valid JSON matching this exact schema:
   "areaToImprove": { "issue": "<specific issue>", "suggestion": "<concrete actionable suggestion>" },
   "refinedTitle": "<polished presentation title>",
   "refinedAudience": "<polished audience label>",
-  "refinedGoal": "<polished goal label>"
+  "refinedGoal": "<polished goal label>",
+  "deliveryFeedback": [
+    {
+      "category": "<pace | fillers | volume | pauses | pitch | phrasing>",
+      "observation": "<1-2 sentence actionable note>",
+      "severity": "<positive | neutral | concern>"
+    }
+  ]
 }`)
 
   return parts.join("\n")

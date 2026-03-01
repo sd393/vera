@@ -6,6 +6,7 @@ import { PdfFeedbackLetter } from "./sections/pdf-feedback-letter"
 import { PdfRubric } from "./sections/pdf-rubric"
 import { PdfHighlights } from "./sections/pdf-highlights"
 import { PdfTranscript } from "./sections/pdf-transcript"
+import { PdfDeliveryFeedback } from "./sections/pdf-delivery-feedback"
 
 export interface PdfReportProps {
   scores: SessionScoresV2
@@ -46,6 +47,11 @@ export function PdfReport({ scores, setup, transcript, date }: PdfReportProps) {
 
         {/* Rubric radar + cards */}
         <PdfRubric rubric={scores.rubric} />
+
+        {/* Delivery feedback */}
+        {scores.deliveryFeedback && scores.deliveryFeedback.length > 0 && (
+          <PdfDeliveryFeedback observations={scores.deliveryFeedback} />
+        )}
 
         {/* Transcript (on new page) */}
         {transcript && <PdfTranscript transcript={transcript} />}
