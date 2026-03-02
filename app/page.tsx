@@ -54,9 +54,9 @@ export default function Page() {
             researchSearchTerms={null}
             isCompressing={false}
             isTranscribing={false}
-            onResearchStart={() => router.push("/login")}
-            onModeSelect={() => router.push("/login")}
-            onReady={() => router.push("/login")}
+            onResearchStart={() => router.push("/chat")}
+            onModeSelect={() => router.push("/chat")}
+            onReady={() => router.push("/chat")}
           />
         </div>
       </div>

@@ -586,16 +586,7 @@ export const SetupWizard = React.memo(function SetupWizard({
                   Present live
                 </button>
 
-                {hasWebRTC && (
-                  <button
-                    type="button"
-                    onClick={() => handleModeSelectInternal("practice-live")}
-                    className="group flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-6 py-3 text-sm font-medium text-foreground transition-all hover:bg-primary/10 hover:border-primary/40 active:scale-[0.98]"
-                  >
-                    <Radio className="h-4 w-4 text-primary/70" />
-                    Practice realtime
-                  </button>
-                )}
+                {/* Realtime mode temporarily hidden */}
               </div>
 
               <div className="flex items-center gap-3 mt-2">

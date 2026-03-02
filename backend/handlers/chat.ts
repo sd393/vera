@@ -4,7 +4,7 @@ import { chatRequestSchema, sanitizeInput } from '@/backend/validation'
 import { buildSystemPrompt } from '@/backend/system-prompt'
 import { checkRateLimit, getClientIp } from '@/backend/rate-limit'
 import { RATE_LIMITS } from '@/backend/rate-limit-config'
-import { requireAuth } from '@/backend/auth'
+import { verifyAuth } from '@/backend/auth'
 import { SSE_HEADERS } from '@/backend/request-utils'
 
 export async function handleChat(request: NextRequest) {
@@ -16,12 +16,8 @@ export async function handleChat(request: NextRequest) {
     )
   }
 
-  const authResult = await requireAuth(request)
-
-  // If requireAuth returned a Response, it's a 401 error
-  if (authResult instanceof Response) {
-    return authResult
-  }
+  // Auth temporarily optional — all users get full access
+  await verifyAuth(request)
 
   try {
     const body = await request.json()

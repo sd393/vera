@@ -45,12 +45,7 @@ function ChatContent() {
     }
   }, [user])
 
-  // Redirect unauthenticated users to login
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/login")
-    }
-  }, [user, loading, router])
+  // Login wall temporarily disabled — all users get full access
 
   // Handle post-checkout success: verify the session server-side, then refresh local state
   useEffect(() => {
@@ -87,7 +82,7 @@ function ChatContent() {
     verifyCheckout()
   }, [searchParams, refreshSubscription, user, loading])
 
-  if (loading || !user || (user && !idToken)) {
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

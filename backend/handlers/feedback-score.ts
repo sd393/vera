@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { openai } from "@/backend/openai"
-import { requireAuth } from "@/backend/auth"
+import { verifyAuth } from "@/backend/auth"
 import { feedbackScoreRequestSchema } from "@/backend/validation"
 import { buildScoringPrompt } from "@/backend/scoring-prompt"
 import { SSE_HEADERS } from "@/backend/request-utils"
@@ -79,8 +79,8 @@ function extractLetterContent(
 }
 
 export async function handleFeedbackScore(request: NextRequest) {
-  const authResult = await requireAuth(request)
-  if (authResult instanceof Response) return authResult
+  // Auth temporarily optional — all users get full access
+  await verifyAuth(request)
 
   try {
     const body = await request.json()
