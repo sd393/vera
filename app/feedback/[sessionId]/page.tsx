@@ -163,11 +163,13 @@ export default function FeedbackPage({ params }: { params: Promise<{ sessionId: 
   const v2Scores = isV2 ? (scores as SessionScoresV2) : null
   const date = session.createdAt?.toDate?.() ?? new Date()
 
-  // Show refined AI values when available, raw values for old sessions that have
-  // scores but lack refined fields, and null (skeleton) while scores are still loading.
-  const headerTitle = v2Scores?.refinedTitle ?? session.setup.topic
-  const headerAudience = v2Scores?.refinedAudience ?? session.setup.audience
-  const headerGoal = v2Scores?.refinedGoal ?? session.setup.goal
+  // Capitalize first letter of each word (for raw user input that may be all-lowercase)
+  const titleCase = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase())
+
+  // Show refined AI values when available, fall back to title-cased raw session values
+  const headerTitle = v2Scores?.refinedTitle ?? titleCase(session.setup.topic)
+  const headerAudience = v2Scores?.refinedAudience ?? titleCase(session.setup.audience)
+  const headerGoal = v2Scores?.refinedGoal ?? titleCase(session.setup.goal)
   const personaMeta = detectPersonaMeta(headerAudience ?? session.setup.audience)
 
   // Streaming state: show letter progressively while scores are still generating

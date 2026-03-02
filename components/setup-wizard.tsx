@@ -555,7 +555,7 @@ export const SetupWizard = React.memo(function SetupWizard({
                 className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-6 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-primary/10 hover:border-primary/40 active:scale-[0.98]"
               >
                 <ArrowRight className="h-3.5 w-3.5 text-primary/70" />
-                Looks good
+                Continue
               </button>
             </motion.div>
           )}
